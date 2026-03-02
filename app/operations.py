@@ -57,3 +57,30 @@ class Divide(Operation):
         if b == 0:
             raise OperationError("Division by zero is not allowed.")
         return a / b
+    
+class OperationFactory:
+    """
+    Factory responsible for creating operation instances
+    based on a command name.
+    """
+
+    _registry = {
+        Add.name: Add,
+        Subtract.name: Subtract,
+        Multiply.name: Multiply,
+        Divide.name: Divide,
+    }
+
+    @classmethod
+    def create(cls, operation_name: str) -> Operation:
+        """
+        Create an operation instance by name.
+
+        Raises OperationError if operation is not supported.
+        """
+        operation_name = operation_name.lower()
+
+        if operation_name not in cls._registry:
+            raise OperationError(f"Unsupported operation: '{operation_name}'")
+
+        return cls._registry[operation_name]()

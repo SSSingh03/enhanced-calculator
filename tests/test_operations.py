@@ -1,6 +1,7 @@
 from app.operations import Add
 from app.operations import Subtract, Multiply, Divide
 from app.exceptions import OperationError
+from app.operations import OperationFactory
 import pytest
 
 def test_add() -> None:
@@ -22,3 +23,12 @@ def test_divide():
 def test_divide_by_zero():
     with pytest.raises(OperationError):
         Divide().execute(10, 0)
+
+def test_factory_creates_add():
+    op = OperationFactory.create("add")
+    assert op.execute(2, 3) == 5
+
+
+def test_factory_invalid_operation():
+    with pytest.raises(OperationError):
+        OperationFactory.create("unknown")
