@@ -58,6 +58,62 @@ class Divide(Operation):
             raise OperationError("Division by zero is not allowed.")
         return a / b
     
+class Power(Operation):
+    """Raise first number to the power of second."""
+
+    name = "power"
+
+    def execute(self, a: float, b: float) -> float:
+        return a ** b   
+    
+class Root(Operation):
+    """Calculate the b-th root of a."""
+
+    name = "root"
+
+    def execute(self, a: float, b: float) -> float:
+        if b == 0:
+            raise OperationError("Root degree cannot be zero.")
+        return a ** (1 / b)
+
+class Modulus(Operation):
+    """Return remainder of division."""
+
+    name = "modulus"
+
+    def execute(self, a: float, b: float) -> float:
+        if b == 0:
+            raise OperationError("Modulus by zero is not allowed.")
+        return a % b
+    
+class IntDivide(Operation):
+    """Integer division (floor division)."""
+
+    name = "int_divide"
+
+    def execute(self, a: float, b: float) -> float:
+        if b == 0:
+            raise OperationError("Integer division by zero is not allowed.")
+        return a // b
+    
+class Percent(Operation):
+    """Calculate percentage: (a / b) * 100."""
+
+    name = "percent"
+
+    def execute(self, a: float, b: float) -> float:
+        if b == 0:
+            raise OperationError("Percentage calculation with zero denominator.")
+        return (a / b) * 100
+    
+class AbsDiff(Operation):
+    """Return absolute difference between two numbers."""
+
+    name = "abs_diff"
+
+    def execute(self, a: float, b: float) -> float:
+        return abs(a - b)
+    
 class OperationFactory:
     """
     Factory responsible for creating operation instances
@@ -69,6 +125,12 @@ class OperationFactory:
         Subtract.name: Subtract,
         Multiply.name: Multiply,
         Divide.name: Divide,
+        Power.name: Power,
+        Root.name: Root,
+        Modulus.name: Modulus,
+        IntDivide.name: IntDivide,
+        Percent.name: Percent,
+        AbsDiff.name: AbsDiff,
     }
 
     @classmethod
