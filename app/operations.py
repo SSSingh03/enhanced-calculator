@@ -11,6 +11,8 @@ Each operation is implemented as its own class so we can:
 
 from abc import ABC, abstractmethod
 
+from app.exceptions import OperationError
+
 
 class Operation(ABC):
     """Base interface for all calculator operations."""
@@ -30,4 +32,28 @@ class Add(Operation):
     def execute(self, a: float, b: float) -> float:
         return a + b
     
- 
+class Subtract(Operation):
+    """Subtract second number from first."""
+
+    name = "subtract"
+
+    def execute(self, a: float, b: float) -> float:
+        return a - b
+    
+class Multiply(Operation):
+    """Multiply two numbers."""
+
+    name = "multiply"
+
+    def execute(self, a: float, b: float) -> float:
+        return a * b
+    
+class Divide(Operation):
+    """Divide first number by second."""
+
+    name = "divide"
+
+    def execute(self, a: float, b: float) -> float:
+        if b == 0:
+            raise OperationError("Division by zero is not allowed.")
+        return a / b
