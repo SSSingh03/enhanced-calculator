@@ -146,3 +146,116 @@ class Calculator:
         self._history.clear()
         for calc in memento.history_snapshot:
             self._history.add(calc)
+"""
+REPL (Read–Eval–Print Loop) entrypoint for the calculator application.
+
+We keep this outside the Calculator class so the core logic remains testable.
+"""
+
+from app.calculator_config import CalculatorConfig
+from app.exceptions import CalculatorError, ValidationError
+from app.logger import LoggingObserver, AutoSaveObserver
+
+
+def _print_help() -> None:
+    print(
+        """
+Available commands:
+  add, subtract, multiply, divide, power, root, modulus, int_divide, percent, abs_diff <a> <b>
+  history
+  clear
+  undo
+  redo
+  help
+  exit
+
+Notes:
+  - All operations take exactly two numbers.
+  - undo/redo work on calculation history.
+"""
+    )
+
+
+def run_repl() -> None:
+    """
+    Run the interactive calculator REPL.
+
+    This function:
+    - Loads config
+    - Creates Calculator
+    - Registers observers (logging + autosave)
+    - Processes user commands until 'exit'
+    """
+    try:
+        config = CalculatorConfig.from_env()
+    except ValidationError as e:
+        print(f"Configuration error: {e}")
+        return
+
+    calc = Calculator(config)
+
+    # Register observers
+    calc.register_observer(LoggingObserver(config))
+    calc.register_observer(AutoSaveObserver(config, calc))
+
+    print("Enhanced Calculator REPL. Type 'help' for commands, 'exit' to quit.")
+
+    while True:
+        try:
+            raw = input("> ").strip()
+            if not raw:
+                continue
+
+            parts = raw.split()
+            command = parts[0].lower()
+
+            if command == "exit":
+                print("Goodbye!")
+                return
+
+            if command == "help":
+                _print_help()
+                continue
+
+            if command == "history":
+                if not calc.history:
+                    print("(history is empty)")
+                else:
+                    for i, c in enumerate(calc.history, start=1):
+                        print(f"{i}. {c.operation} {c.a} {c.b} = {c.result} ({c.timestamp.isoformat()})")
+                continue
+
+            if command == "clear":
+                calc.clear_history()
+                print("History cleared.")
+                continue
+
+            if command == "undo":
+                calc.undo()
+                print("Undid last action.")
+                continue
+
+            if command == "redo":
+                calc.redo()
+                print("Redid last undone action.")
+                continue
+
+            # Otherwise assume it's an operation that needs two args
+            if len(parts) != 3:
+                print("Error: operations require exactly two numbers: <command> <a> <b>")
+                continue
+
+            a = float(parts[1])
+            b = float(parts[2])
+
+            result_calc = calc.calculate(command, a, b)
+            print(result_calc.result)
+
+        except ValueError:
+            print("Error: please enter valid numbers. Example: add 2 3")
+        except CalculatorError as e:
+            # Catches OperationError, ValidationError, HistoryError, etc.
+            print(f"Error: {e}")
+        except KeyboardInterrupt:
+            print("\nGoodbye!")
+            return

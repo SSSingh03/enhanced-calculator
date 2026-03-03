@@ -1,6 +1,14 @@
-venv/
-__pychache__/
+# Environment variables
+.env
+
+# Runtime output
+logs/
+history/
+
+# Python
+__pycache__/
 *.pyc
 .pytest_cache/
-.coverage
-.env
+
+# Virtual environments
+venv/
