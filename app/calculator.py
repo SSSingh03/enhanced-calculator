@@ -8,6 +8,7 @@ Responsibilities:
 - Store results in History
 - Support undo/redo using the Memento pattern
 - Notify observers (Observer pattern) after each calculation
+- Provide a REPL (command-line UI). The UI layer uses color-coded output (optional feature)
 """
 
 from __future__ import annotations
@@ -21,6 +22,10 @@ from app.exceptions import HistoryError, CalculatorError, ValidationError
 from app.history import History
 from app.operations import OperationFactory
 from app.logger import LoggingObserver, AutoSaveObserver
+
+# UI formatting (Colorama) is intentionally kept separate from core logic.
+# This is a professional separation of concerns: business logic vs presentation.
+from app.ui import fmt_ok, fmt_warn, fmt_error, fmt_info
 
 
 class Calculator:
@@ -145,8 +150,14 @@ class Calculator:
 
 
 def _print_help() -> None:  # pragma: no cover
+    """
+    Print help text for the REPL.
+
+    Kept as a pure UI concern (not part of calculator business logic).
+    """
     print(
-        """
+        fmt_info(
+            """
 Available commands:
   add, subtract, multiply, divide, power, root, modulus, int_divide, percent, abs_diff <a> <b>
   history
@@ -160,20 +171,24 @@ Notes:
   - All operations take exactly two numbers.
   - undo/redo work on calculation history.
 """
+        )
     )
 
 
 def run_repl() -> None:  # pragma: no cover
     """
-    Run the interactive calculator REPL.
+    Run the interactive calculator REPL (Read–Eval–Print Loop).
 
     Interactive REPL code is excluded from coverage because it relies on user input.
     Core logic is tested via unit tests for Calculator, operations, and persistence.
+
+    Optional feature implemented here:
+    - Color-coded outputs using Colorama (presentation-layer only).
     """
     try:
         config = CalculatorConfig.from_env()
     except ValidationError as e:
-        print(f"Configuration error: {e}")
+        print(fmt_error(f"Configuration error: {e}"))
         return
 
     calc = Calculator(config)
@@ -182,11 +197,11 @@ def run_repl() -> None:  # pragma: no cover
     calc.register_observer(LoggingObserver(config))
     calc.register_observer(AutoSaveObserver(config, calc))
 
-    print("Enhanced Calculator REPL. Type 'help' for commands, 'exit' to quit.")
+    print(fmt_info("Enhanced Calculator REPL. Type 'help' for commands, 'exit' to quit."))
 
     while True:
         try:
-            raw = input("> ").strip()
+            raw = input(fmt_info("> ")).strip()
             if not raw:
                 continue
 
@@ -194,7 +209,7 @@ def run_repl() -> None:  # pragma: no cover
             command = parts[0].lower()
 
             if command == "exit":
-                print("Goodbye!")
+                print(fmt_info("Goodbye!"))
                 return
 
             if command == "help":
@@ -203,44 +218,47 @@ def run_repl() -> None:  # pragma: no cover
 
             if command == "history":
                 if not calc.history:
-                    print("(history is empty)")
+                    print(fmt_warn("(history is empty)"))
                 else:
                     for i, c in enumerate(calc.history, start=1):
                         print(
-                            f"{i}. {c.operation} {c.a} {c.b} = {c.result} ({c.timestamp.isoformat()})"
+                            fmt_info(
+                                f"{i}. {c.operation} {c.a} {c.b} = {c.result} ({c.timestamp.isoformat()})"
+                            )
                         )
                 continue
 
             if command == "clear":
                 calc.clear_history()
-                print("History cleared.")
+                print(fmt_ok("History cleared."))
                 continue
 
             if command == "undo":
                 calc.undo()
-                print("Undid last action.")
+                print(fmt_ok("Undid last action."))
                 continue
 
             if command == "redo":
                 calc.redo()
-                print("Redid last undone action.")
+                print(fmt_ok("Redid last undone action."))
                 continue
 
             # Otherwise assume it's an operation that needs two args
             if len(parts) != 3:
-                print("Error: operations require exactly two numbers: <command> <a> <b>")
+                print(fmt_error("Error: operations require exactly two numbers: <command> <a> <b>"))
                 continue
 
             a = float(parts[1])
             b = float(parts[2])
 
             result_calc = calc.calculate(command, a, b)
-            print(result_calc.result)
+            print(fmt_ok(str(result_calc.result)))
 
         except ValueError:
-            print("Error: please enter valid numbers. Example: add 2 3")
+            print(fmt_error("Error: please enter valid numbers. Example: add 2 3"))
         except CalculatorError as e:
-            print(f"Error: {e}")
+            # CalculatorError catches HistoryError/OperationError/ValidationError cleanly
+            print(fmt_error(f"Error: {e}"))
         except KeyboardInterrupt:
-            print("\nGoodbye!")
+            print(fmt_info("\nGoodbye!"))
             return

@@ -33,6 +33,7 @@ The **Enhanced Calculator** is a command-line application that performs arithmet
 - Comprehensive unit testing
 - Continuous integration using GitHub Actions
 - Test coverage enforcement (minimum 90%)
+- Color-coded REPL output (Colorama)
 
 ---
 
