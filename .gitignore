@@ -9,6 +9,7 @@ history/
 __pycache__/
 *.pyc
 .pytest_cache/
+.coverage
 
 # Virtual environments
 venv/

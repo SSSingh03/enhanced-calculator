@@ -17,9 +17,10 @@ from typing import List
 from app.calculation import Calculation
 from app.calculator_config import CalculatorConfig
 from app.calculator_memento import CalculatorMemento
-from app.exceptions import HistoryError
+from app.exceptions import HistoryError, CalculatorError, ValidationError
 from app.history import History
 from app.operations import OperationFactory
+from app.logger import LoggingObserver, AutoSaveObserver
 
 
 class Calculator:
@@ -77,7 +78,6 @@ class Calculator:
         - Snapshot BEFORE changing state
         - Clear redo stack on new action
         """
-
         # Save state for undo
         self._undo_stack.append(self._snapshot())
         self._redo_stack.clear()
@@ -97,9 +97,7 @@ class Calculator:
         return calc
 
     def undo(self) -> None:
-        """
-        Undo the most recent calculation.
-        """
+        """Undo the most recent calculation."""
         if not self._undo_stack:
             raise HistoryError("Nothing to undo.")
 
@@ -111,9 +109,7 @@ class Calculator:
         self._restore(memento)
 
     def redo(self) -> None:
-        """
-        Redo the last undone calculation.
-        """
+        """Redo the last undone calculation."""
         if not self._redo_stack:
             raise HistoryError("Nothing to redo.")
 
@@ -146,18 +142,9 @@ class Calculator:
         self._history.clear()
         for calc in memento.history_snapshot:
             self._history.add(calc)
-"""
-REPL (Read–Eval–Print Loop) entrypoint for the calculator application.
-
-We keep this outside the Calculator class so the core logic remains testable.
-"""
-
-from app.calculator_config import CalculatorConfig
-from app.exceptions import CalculatorError, ValidationError
-from app.logger import LoggingObserver, AutoSaveObserver
 
 
-def _print_help() -> None:
+def _print_help() -> None:  # pragma: no cover
     print(
         """
 Available commands:
@@ -176,15 +163,12 @@ Notes:
     )
 
 
-def run_repl() -> None:
+def run_repl() -> None:  # pragma: no cover
     """
     Run the interactive calculator REPL.
 
-    This function:
-    - Loads config
-    - Creates Calculator
-    - Registers observers (logging + autosave)
-    - Processes user commands until 'exit'
+    Interactive REPL code is excluded from coverage because it relies on user input.
+    Core logic is tested via unit tests for Calculator, operations, and persistence.
     """
     try:
         config = CalculatorConfig.from_env()
@@ -222,7 +206,9 @@ def run_repl() -> None:
                     print("(history is empty)")
                 else:
                     for i, c in enumerate(calc.history, start=1):
-                        print(f"{i}. {c.operation} {c.a} {c.b} = {c.result} ({c.timestamp.isoformat()})")
+                        print(
+                            f"{i}. {c.operation} {c.a} {c.b} = {c.result} ({c.timestamp.isoformat()})"
+                        )
                 continue
 
             if command == "clear":
@@ -254,7 +240,6 @@ def run_repl() -> None:
         except ValueError:
             print("Error: please enter valid numbers. Example: add 2 3")
         except CalculatorError as e:
-            # Catches OperationError, ValidationError, HistoryError, etc.
             print(f"Error: {e}")
         except KeyboardInterrupt:
             print("\nGoodbye!")
